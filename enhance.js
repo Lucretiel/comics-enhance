@@ -1,8 +1,18 @@
+const search = (complexSelector, root) =>
+  Array.isArray(complexSelector)
+    ? complexSelector.reduce(
+        (element, selector) => search(selector, element),
+        document
+      )
+    : typeof complexSelector === "function"
+    ? complexSelector(root)
+    : root.querySelector(complexSelector);
+
 const createNavigator = (selector, button) => {
   if (!selector) return;
   console.log(`Checking navigator via '${selector}' for '${button}'`);
 
-  const element = document.querySelector(selector);
+  const element = search(selector, document);
   if (!element) return;
 
   const target = element.href;
