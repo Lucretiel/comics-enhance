@@ -1,9 +1,6 @@
-const search = (complexSelector, root) =>
+const search = (root, complexSelector) =>
   Array.isArray(complexSelector)
-    ? complexSelector.reduce(
-        (element, selector) => search(selector, element),
-        document
-      )
+    ? complexSelector.reduce(search, document)
     : typeof complexSelector === "function"
     ? complexSelector(root)
     : root.querySelector(complexSelector);
@@ -12,7 +9,7 @@ const createNavigator = (selector, button) => {
   if (!selector) return;
   console.log(`Checking navigator via '${selector}' for '${button}'`);
 
-  const element = search(selector, document);
+  const element = search(document, selector);
   if (!element) return;
 
   const target = element.href;
@@ -31,7 +28,7 @@ const createPrevNav = (selector) => createNavigator(selector, "ArrowLeft");
 
 const enhanceComic = ({ comic, next, prev }) => {
   console.log("Improving your comics experience");
-  document.querySelector(comic).scrollIntoView();
+  search(document, comic).scrollIntoView();
   createNextNav(next);
   createPrevNav(prev);
 };
