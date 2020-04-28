@@ -23,11 +23,7 @@
   window.enhanceComic = ({ comic, next, prev }) => {
     console.log("Improving your comics experience");
     document.querySelector(comic).scrollIntoView();
-    if (next) {
-      createNavigator(next, "ArrowRight");
-    }
-    if (prev) {
-      createNavigator(prev, "ArrowLeft");
-    }
+    createNextNav(next);
+    createPrevNav(prev);
   };
 })();
