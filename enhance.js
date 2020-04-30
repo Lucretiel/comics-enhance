@@ -1,6 +1,6 @@
 /// Function that throws an exception
-const raise = (thing) => {
-  throw thing;
+const raise = thing => {
+	throw thing;
 };
 
 /// Search for an element in root using a complex selector. A complex selector
@@ -10,27 +10,27 @@ const raise = (thing) => {
 /// - a function, in which case it will be called on root
 /// - an array of complex selectors, which will be resolved in order
 const search = (root, complexSelector) =>
-  Array.isArray(complexSelector)
-    ? complexSelector.reduce(search, document)
-    : typeof complexSelector === "function"
-    ? complexSelector(root)
-    : typeof complexSelector === "string"
-    ? root.querySelector(complexSelector)
-    : raise(
-        new Error(
-          `Selector must be a array, function, or string; got ${complexSelector}`
-        )
-      );
+	Array.isArray(complexSelector)
+		? complexSelector.reduce(search, document)
+		: typeof complexSelector === "function"
+		? complexSelector(root)
+		: typeof complexSelector === "string"
+		? root.querySelector(complexSelector)
+		: raise(
+				new Error(
+					`Selector must be a array, function, or string; got ${complexSelector}`,
+				),
+		  );
 
 /// Search for an element in `document` with a complex selector. If the element
 /// is found, call a function on it.
 const useElement = (selector, func) => {
-  if (!selector) return;
+	if (!selector) return;
 
-  const element = search(document, selector);
-  if (!element) return;
+	const element = search(document, selector);
+	if (!element) return;
 
-  return func(element);
+	return func(element);
 };
 
 /// Given a selector and a button, search for an element matching the selector.
@@ -38,39 +38,39 @@ const useElement = (selector, func) => {
 /// on the given button that will navigate to that page when pressed. This
 /// is used to create navigation shortcuts with the left and right arrow keys.
 const createNavigator = (selector, button) =>
-  useElement(selector, (element) => {
-    const target = element.href;
-    if (!target) return;
+	useElement(selector, element => {
+		const target = element.href;
+		if (!target) return;
 
-    console.log(`Creating navigator to '${target}'`);
+		console.log(`Creating navigator to '${target}'`);
 
-    document.addEventListener("keyup", (event) => {
-      if (event.key === button) {
-        window.location.assign(target);
-        event.preventDefault();
-      }
-    });
+		document.addEventListener("keyup", event => {
+			if (event.key === button) {
+				window.location.assign(target);
+				event.preventDefault();
+			}
+		});
 
-    document.addEventListener("keydown", (event) => {
-      if (event.key === button) {
-        event.preventDefault();
-      }
-    });
-  });
+		document.addEventListener("keydown", event => {
+			if (event.key === button) {
+				event.preventDefault();
+			}
+		});
+	});
 
 const addAltText = (textSelector, afterSelector) =>
-  useElement(textSelector, (textNode) =>
-    useElement(afterSelector, (afterNode) => {
-      const altText = textNode.title;
+	useElement(textSelector, textNode =>
+		useElement(afterSelector, afterNode => {
+			const altText = textNode.title;
 
-      const newElement = document.createElement("span");
-      element.innerText = altText;
-      element.style.fontSize = "16pt";
-      element.style.backgroundColor = "#FFFFFF";
+			const newElement = document.createElement("span");
+			element.innerText = altText;
+			element.style.fontSize = "16pt";
+			element.style.backgroundColor = "#FFFFFF";
 
-      afterNode.appendChild(element);
-    })
-  );
+			afterNode.appendChild(element);
+		}),
+	);
 
 /// Entry point for comic enhancing. comic, next, and prev are all complex
 /// selectors used to create an enhanced comic experience. Each selector
@@ -82,12 +82,12 @@ const addAltText = (textSelector, afterSelector) =>
 /// - If alt is not nil, its text and after selectors are consulted to insert
 ///   alt text
 const enhanceComic = ({ comic, next, prev, alt }) => {
-  console.log("Improving your comics experience");
-  useElement(comic, (element) => element.scrollIntoView());
-  createNavigator(next, "ArrowRight");
-  createNavigator(prev, "ArrowLeft");
-  if (alt) {
-    const { text, after } = alt;
-    addAltText(text, after);
-  }
+	console.log("Improving your comics experience");
+	useElement(comic, element => element.scrollIntoView());
+	createNavigator(next, "ArrowRight");
+	createNavigator(prev, "ArrowLeft");
+	if (alt) {
+		const { text, after } = alt;
+		addAltText(text, after);
+	}
 };
