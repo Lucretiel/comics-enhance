@@ -58,6 +58,20 @@ const createNavigator = (selector, button) =>
     });
   });
 
+const addAltText = (textSelector, afterSelector) =>
+  useElement(textSelector, (textNode) =>
+    useElement(afterSelector, (afterNode) => {
+      const altText = textNode.title;
+
+      const newElement = document.createElement("span");
+      element.innerText = altText;
+      element.style.fontSize = "16pt";
+      element.style.backgroundColor = "#FFFFFF";
+
+      afterNode.appendChild(element);
+    })
+  );
+
 /// Entry point for comic enhancing. comic, next, and prev are all complex
 /// selectors used to create an enhanced comic experience. Each selector
 /// is used to find an element with the search function, then:
@@ -65,9 +79,15 @@ const createNavigator = (selector, button) =>
 /// - The `comic` element is scrolled to
 /// - A right-arrow shortcut is created to the href of next
 /// - A left-arrow shortcut is created to the href of prev
-const enhanceComic = ({ comic, next, prev }) => {
+/// - If alt is not nil, its text and after selectors are consulted to insert
+///   alt text
+const enhanceComic = ({ comic, next, prev, alt }) => {
   console.log("Improving your comics experience");
   useElement(comic, (element) => element.scrollIntoView());
   createNavigator(next, "ArrowRight");
   createNavigator(prev, "ArrowLeft");
+  if (alt) {
+    const { text, after } = alt;
+    addAltText(text, after);
+  }
 };
