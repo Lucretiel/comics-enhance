@@ -63,7 +63,7 @@ const addAltText = (textSelector, afterSelector) =>
 		useElement(afterSelector, afterNode => {
 			const altText = textNode.title;
 
-			const newElement = document.createElement("span");
+			const element = document.createElement("span");
 			element.innerText = altText;
 			element.style.fontSize = "16pt";
 			element.style.backgroundColor = "#FFFFFF";
