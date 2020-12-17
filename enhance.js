@@ -83,7 +83,7 @@ const addAltText = (textSelector, afterSelector) =>
 ///   alt text
 const enhanceComic = ({ comic, next, prev, alt }) => {
 	console.log("Improving your comics experience");
-	useElement(comic, element => setTimeout(() => element.scrollIntoView(), 250));
+	useElement(comic, element => element.scrollIntoView());
 	createNavigator(next, "ArrowRight");
 	createNavigator(prev, "ArrowLeft");
 	if (alt) {
