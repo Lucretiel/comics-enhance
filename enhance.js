@@ -73,6 +73,8 @@ const force = selector => operation => node => {
 	}
 };
 
+/// Wrap a selector such that it only executes the operation on the first
+/// selected node
 const once = selector => operation => node => {
 	let done = false;
 
@@ -115,6 +117,7 @@ const createNavigator = (selector, button) =>
 const addAltText = (textSelector, afterSelector) =>
 	withBase(textSelector)(textNode =>
 		afterSelector(afterNode => {
+			console.log("Adding alt text", textNode, afterNode);
 			const element = document.createElement("span");
 
 			element.innerText = textNode.title;
@@ -145,9 +148,14 @@ const scrollAfterLoad = contentSelector =>
 	contentSelector(
 		withBase(force(once(queryImg)))(img => content => {
 			if (img == null) {
+				console.log("scrolling into view", content);
 				content.scrollIntoView();
 			} else {
-				loaded(img).finally(() => content.scrollIntoView());
+				console.log("waiting for image to load", img);
+				loaded(img).finally(() => {
+					console.log("scrolling into view", content);
+					content.scrollIntoView();
+				});
 			}
 		}),
 	);
