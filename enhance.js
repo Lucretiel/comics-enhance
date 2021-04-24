@@ -1,57 +1,111 @@
-/// Function that throws an exception
-const raise = thing => {
-	throw thing;
-};
-
-/// Search for an element in root using a complex selector. A complex selector
-/// is:
+/// SELECTOR COMBINATORS
 ///
-/// - a string, in which case the element will be search with querySelector
-/// - a function, in which case it will be called on root
-/// - an array of complex selectors, which will be resolved in order
-const search = (root, complexSelector) =>
-	Array.isArray(complexSelector)
-		? complexSelector.reduce(search, document)
-		: typeof complexSelector === "function"
-		? complexSelector(root)
-		: typeof complexSelector === "string"
-		? root.querySelector(complexSelector)
-		: raise(
-				new Error(
-					`Selector must be a array, function, or string; got ${complexSelector}`,
-				),
-		  );
+/// An operation is a function that takes a node as an argument and does some
+/// kind of work with it: (node: Element) => void
+///
+/// A selector is a function that takes an operation as an argument and returns
+/// a new operation that selects 0 or more subnodes from the input node and
+/// performs the operation on them: (Operation) => Operation
 
-/// Search for an element in `document` with a complex selector. If the element
-/// is found, call a function on it.
-const useElement = (selector, func) => {
-	if (!selector) return;
+/// Base selectors
 
-	const element = search(document, selector);
-	if (!element) return;
-
-	return func(element);
+/// Search a node with `querySelector`
+const queryChildren = selector => operation => node => {
+	const selected = node.querySelector(selector);
+	if (selected) operation(selected);
 };
 
-/// Given a selector and a button, search for an element matching the selector.
-/// If that element exists and has an href attribute, create event listeners
-/// on the given button that will navigate to that page when pressed. This
-/// is used to create navigation shortcuts with the left and right arrow keys.
+/// Same as queryChildren, but also instead operate the input node if it matches
+const query = selector => {
+	const childSelector = queryChildren(selector);
+	return operation => {
+		const childOperation = childSelector(operation);
+		return node => (node.matches(selector) ? operation : childOperation)(node);
+	};
+};
+
+/// Search a node with `querySelectorAll`
+const queryAll = selector => func => node =>
+	node.querySelectorAll(selector).forEach(selected => func(selected));
+
+const auto = builder => selector =>
+	typeof selector == "string"
+		? builder(selector)
+		: selector == null
+		? operation => node => {}
+		: selector;
+
+const autoQuery = auto(queryChildren);
+const autoQueryAll = auto(queryAll);
+
+/// Primitives and combinators
+
+/// Create a selector that concatenates the results of all the given selectors
+const concat = selectors => operation =>
+	all(selectors.map(selector => selector(operation)));
+
+/// Create an operation that executes each input operation on the input node
+const all = operations => node => operations.forEach(op => op(node));
+
+/// Given a selector, create a new selector that retains the original input
+/// element. The operation should return another operation that accepts the
+/// original input node
+const withBase = selector => operation => node =>
+	selector(selected => operation(selected)(node))(node);
+
+/// Given a sequence of selectors, create a selector that runs each one on
+/// the output of the previous one
+const chain = selectors => operation =>
+	selectors.reduceRight((op, selector) => selector(op), operation);
+
+/// Wrap a selector such that, if it doesn't execute the operation at all,
+/// the operation is called once with null
+const force = selector => operation => node => {
+	let success = false;
+
+	selector(selected => {
+		success = true;
+		operation(selected);
+	});
+
+	if (!success) {
+		operation(null);
+	}
+};
+
+const once = selector => operation => node => {
+	let done = false;
+
+	selector(selected => {
+		if (!done) {
+			done = true;
+			operation(selected);
+		}
+	})(node);
+};
+
+/// Comic Enhancers
+
+/// Given a selector and a button, create an operation that searches for an
+/// element matching the selector. If that element exists and has an href
+/// attribute, create event listeners on the given button that will navigate
+/// to that page when pressed. This is used to create navigation shortcuts with
+/// the left and right arrow keys.
 const createNavigator = (selector, button) =>
-	useElement(selector, element => {
+	withBase(once(selector))(element => root => {
 		const target = element.href;
 		if (!target) return;
 
 		console.log(`Creating navigator to '${target}'`);
 
-		document.addEventListener("keyup", event => {
+		root.addEventListener("keyup", event => {
 			if (event.key === button) {
 				window.location.assign(target);
 				event.preventDefault();
 			}
 		});
 
-		document.addEventListener("keydown", event => {
+		root.addEventListener("keydown", event => {
 			if (event.key === button) {
 				event.preventDefault();
 			}
@@ -59,16 +113,42 @@ const createNavigator = (selector, button) =>
 	});
 
 const addAltText = (textSelector, afterSelector) =>
-	useElement(textSelector, textNode =>
-		useElement(afterSelector, afterNode => {
-			const altText = textNode.title;
-
+	withBase(textSelector)(textNode =>
+		afterSelector(afterNode => {
 			const element = document.createElement("span");
-			element.innerText = altText;
+
+			element.innerText = textNode.title;
 			element.style.fontSize = "16pt";
 			element.style.backgroundColor = "#FFFFFF";
+			element.style.color = "#000000";
 
 			afterNode.appendChild(element);
+		}),
+	);
+
+const queryImg = query("img");
+
+/// Create a future that resolves when the given node is loaded
+const loaded = node =>
+	new Promise((resolve, reject) => {
+		if (node.complete) {
+			resolve();
+		} else {
+			node.addEventListener("load", () => resolve(), { once: true });
+			node.addEventListener("error", event => reject(event), { once: true });
+		}
+	});
+
+/// Scroll the element of the contentSelector into view after its first
+/// image child is loaded
+const scrollAfterLoad = contentSelector =>
+	contentSelector(
+		withBase(force(once(queryImg)))(img => content => {
+			if (img == null) {
+				content.scrollIntoView();
+			} else {
+				loaded(img).finally(() => content.scrollIntoView());
+			}
 		}),
 	);
 
@@ -81,13 +161,48 @@ const addAltText = (textSelector, afterSelector) =>
 /// - A left-arrow shortcut is created to the href of prev
 /// - If alt is not nil, its text and after selectors are consulted to insert
 ///   alt text
-const enhanceComic = ({ comic, next, prev, alt }) => {
+/// - All elements matching the noise selector are removed
+///
+/// A query is a function with the signature
+///
+/// (operation: (selected: node) => void) => (root: node) => void
+///
+/// It should search the root for any nodes it wants to select and call the
+/// operation on each one. We already provide `query`, `queryChildren`, and
+/// `queryAll`, which correspond roughly to `node.querySelector` and
+/// `node.querySelectorAll`.
+///
+/// You can also simply provide strings, which will be converted into
+/// querySelector queries.
+///
+/// Example:
+///
+/// enhanceComic({
+/// 	comic: ".main-content",
+/// 	next: "nav .next-arrow",
+/// 	prev: "nav .prev-arrow",
+/// 	alt: {
+/// 		text: ".main-content img",
+/// 		after: ".main-content",
+/// 	}
+/// 	noise: "nav",
+/// })
+const enhanceComic = ({ comic, next, prev, alt, noise }) => {
 	console.log("Improving your comics experience");
-	useElement(comic, element => element.scrollIntoView());
-	createNavigator(next, "ArrowRight");
-	createNavigator(prev, "ArrowLeft");
-	if (alt) {
-		const { text, after } = alt;
-		addAltText(text, after);
-	}
+
+	all([
+		// Scroll the comic into view after the first img it contains has
+		// loaded
+		scrollAfterLoad(autoQuery(comic)),
+
+		// Create arrow key navigation
+		createNavigator(autoQuery(next), "ArrowRight"),
+		createNavigator(autoQuery(prev), "ArrowLeft"),
+
+		// Remove noise
+		autoQueryAll(noise)(element => element.remove()),
+
+		// Add alt text
+		alt ? addAltText(autoQuery(alt.text), autoQueryAll(alt.after)) : () => {},
+	])(document);
 };
