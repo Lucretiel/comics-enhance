@@ -20,7 +20,8 @@ const query = selector => {
 	const childSelector = queryChildren(selector);
 	return operation => {
 		const childOperation = childSelector(operation);
-		return node => (node.matches(selector) ? operation : childOperation)(node);
+		return node =>
+			(node?.matches?.(selector) ? operation : childOperation)(node);
 	};
 };
 
