@@ -200,10 +200,6 @@ const enhanceComic = ({ comic, next, prev, alt, noise }) => {
 	console.log("Improving your comics experience");
 
 	all([
-		// Scroll the comic into view after the first img it contains has
-		// loaded
-		scrollAfterLoad(autoQuery(comic)),
-
 		// Create arrow key navigation
 		createNavigator(autoQuery(next), "ArrowRight"),
 		createNavigator(autoQuery(prev), "ArrowLeft"),
@@ -213,5 +209,9 @@ const enhanceComic = ({ comic, next, prev, alt, noise }) => {
 
 		// Add alt text
 		alt ? addAltText(autoQuery(alt.text), autoQueryAll(alt.after)) : () => {},
+
+		// Scroll the comic into view after the first img it contains has
+		// loaded
+		scrollAfterLoad(autoQuery(comic)),
 	])(document);
 };
