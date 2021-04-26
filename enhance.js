@@ -10,24 +10,16 @@
 /// Base selectors
 
 /// Search a node with `querySelector`
-const queryChildren = selector => operation => node => {
-	const selected = node.querySelector(selector);
-	if (selected) operation(selected);
-};
+const queryChildren = selector => select(node => node.querySelector(selector));
 
 /// Same as queryChildren, but also instead operate the input node if it matches
-const query = selector => {
-	const childSelector = queryChildren(selector);
-	return operation => {
-		const childOperation = childSelector(operation);
-		return node =>
-			(node?.matches?.(selector) ? operation : childOperation)(node);
-	};
-};
+const query = selector =>
+	select(node =>
+		node.matches?.(selector) ? node : node.querySelector(selector),
+	);
 
 /// Search a node with `querySelectorAll`
-const queryAll = selector => func => node =>
-	node.querySelectorAll(selector).forEach(selected => func(selected));
+const queryAll = selector => selectAll(node => node.querySelectorAll(selector));
 
 const auto = builder => selector =>
 	typeof selector == "string"
@@ -40,6 +32,19 @@ const autoQuery = auto(queryChildren);
 const autoQueryAll = auto(queryAll);
 
 /// Primitives and combinators
+
+/// Create a selector out of a function that returns a subnode (or null) from
+/// a node
+const select = nodeSelector =>
+	selectAll(node => {
+		const selected = nodeSelector(node);
+		return selected ? [selected] : [];
+	});
+
+/// Create a selector out of a function that returns 0 or more subnodes from
+/// a node
+const selectAll = nodeSelectorAll => operation => node =>
+	Array.from(nodeSelectorAll(node)).forEach(node => operation(node));
 
 /// Create a selector that concatenates the results of all the given selectors
 const concat = selectors => operation =>
