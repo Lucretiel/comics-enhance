@@ -35,11 +35,10 @@ const autoQueryAll = auto(queryAll);
 
 /// Create a selector out of a function that returns a subnode (or null) from
 /// a node
-const select = nodeSelector =>
-	selectAll(node => {
-		const selected = nodeSelector(node);
-		return selected ? [selected] : [];
-	});
+const select = nodeSelector => operation => node => {
+	const selected = nodeSelector(node);
+	if (selected) return operation(selected);
+};
 
 /// Create a selector out of a function that returns 0 or more subnodes from
 /// a node
@@ -69,14 +68,12 @@ const chain = selectors => operation =>
 const force = selector => operation => node => {
 	let success = false;
 
-	selector(selected => {
+	const result = selector(selected => {
 		success = true;
 		operation(selected);
-	});
+	})(node);
 
-	if (!success) {
-		operation(null);
-	}
+	return success ? result : operation(null);
 };
 
 /// Wrap a selector such that it only executes the operation on the first
@@ -84,10 +81,10 @@ const force = selector => operation => node => {
 const once = selector => operation => node => {
 	let done = false;
 
-	selector(selected => {
+	return selector(selected => {
 		if (!done) {
 			done = true;
-			operation(selected);
+			return operation(selected);
 		}
 	})(node);
 };
@@ -100,7 +97,7 @@ const once = selector => operation => node => {
 /// to that page when pressed. This is used to create navigation shortcuts with
 /// the left and right arrow keys.
 const createNavigator = (selector, button) =>
-	withBase(once(selector))(element => root => {
+	withBase(selector)(element => root => {
 		const target = element.href;
 		if (!target) return;
 
