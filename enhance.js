@@ -128,7 +128,7 @@ const addAltText = (textSelector, afterSelector) =>
 			element.style.backgroundColor = "#FFFFFF";
 			element.style.color = "#000000";
 
-			afterNode.appendChild(element);
+			afterNode.parentNode.insertBefore(element, afterNode.nextSibling);
 		}),
 	);
 
