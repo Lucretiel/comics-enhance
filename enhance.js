@@ -38,6 +38,7 @@ const autoQueryAll = auto(queryAll);
 const select = nodeSelector => operation => node => {
 	const selected = nodeSelector(node);
 	if (selected) return operation(selected);
+	else throw new Error(`Failed to match ${nodeSelector} in ${node}`);
 };
 
 /// Create a selector out of a function that returns 0 or more subnodes from
