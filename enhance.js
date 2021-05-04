@@ -110,7 +110,7 @@ const addAltText = (textSelector, afterSelector) =>
 			element.style.backgroundColor = "#FFFFFF";
 			element.style.color = "#000000";
 
-			if (isLink(text)) {
+			if (isLink(altText)) {
 				const link = document.createElement("a");
 				link.href = altText;
 				link.appendChild(element);
