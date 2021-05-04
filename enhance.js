@@ -107,8 +107,8 @@ const addAltText = (textSelector, afterSelector) =>
 
 			element.innerText = altText;
 			element.style.fontSize = "16pt";
-			element.style.backgroundColor = "#FFFFFF";
-			element.style.color = "#000000";
+			// element.style.backgroundColor = "#FFFFFF";
+			// element.style.color = "#000000";
 
 			if (isLink(altText)) {
 				const link = document.createElement("a");
