@@ -64,32 +64,6 @@ const withBase = selector => operation => node =>
 const chain = selectors => operation =>
 	selectors.reduceRight((op, selector) => selector(op), operation);
 
-/// Wrap a selector such that, if it doesn't execute the operation at all,
-/// the operation is called once with null
-const force = selector => operation => node => {
-	let success = false;
-
-	const result = selector(selected => {
-		success = true;
-		operation(selected);
-	})(node);
-
-	return success ? result : operation(null);
-};
-
-/// Wrap a selector such that it only executes the operation on the first
-/// selected node
-const once = selector => operation => node => {
-	let done = false;
-
-	return selector(selected => {
-		if (!done) {
-			done = true;
-			return operation(selected);
-		}
-	})(node);
-};
-
 /// Comic Enhancers
 
 /// Given a selector and a button, create an operation that searches for an
@@ -150,7 +124,7 @@ const loaded = node =>
 /// image child is loaded
 const scrollAfterLoad = contentSelector =>
 	contentSelector(
-		withBase(force(once(queryImg)))(img => content => {
+		withBase(queryImg)(img => content => {
 			if (img == null) {
 				console.log("scrolling into view", content);
 				content.scrollIntoView();
@@ -211,7 +185,7 @@ const enhanceComic = ({ comic, next, prev, alt, noise }) => {
 		autoQueryAll(noise)(element => element.remove()),
 
 		// Add alt text
-		alt ? addAltText(autoQuery(alt.text), autoQueryAll(alt.after)) : () => {},
+		alt ? addAltText(autoQuery(alt.text), autoQuery(alt.after)) : () => {},
 
 		// Scroll the comic into view after the first img it contains has
 		// loaded
