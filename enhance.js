@@ -92,20 +92,34 @@ const createNavigator = (selector, button) =>
 		});
 	});
 
-const addAltText = (textSelector, afterSelector) =>
-	withBase(textSelector)(textNode =>
-		afterSelector(afterNode => {
-			console.log("Adding alt text", textNode, afterNode);
-			const element = document.createElement("span");
+const isLink = text =>
+	/^https?:\/\/(?:[-\w]+\.)+[-\w+]+(?:\/[-\w_~%]+)*\/?(?:\?[-\w_~%]+=[-\w_~%]+(?:&[-\w_~%]+=[-\w_~%]+)*)?(#[-\w_~%]+)?$/.test(
+		text,
+	);
 
-			element.innerText = textNode.title;
+const addAltText = (textSelector, afterSelector) =>
+	withBase(textSelector)(textNode => {
+		const altText = textNode.title;
+
+		return afterSelector(afterNode => {
+			console.log("Adding alt text", textNode, afterNode);
+			let element = document.createElement("span");
+
+			element.innerText = altText;
 			element.style.fontSize = "16pt";
 			element.style.backgroundColor = "#FFFFFF";
 			element.style.color = "#000000";
 
+			if (isLink(text)) {
+				const link = document.createElement("a");
+				link.href = altText;
+				link.appendChild(element);
+				element = link;
+			}
+
 			afterNode.parentNode.insertBefore(element, afterNode.nextSibling);
-		}),
-	);
+		});
+	});
 
 const queryImg = query("img");
 
