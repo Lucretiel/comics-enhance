@@ -97,7 +97,7 @@ const isLink = text =>
 		text,
 	);
 
-const addAltText = (textSelector, afterSelector) =>
+const addAltText = (textSelector, afterSelector, foreground, background) =>
 	withBase(textSelector)(textNode => {
 		const altText = textNode.title;
 
@@ -107,8 +107,9 @@ const addAltText = (textSelector, afterSelector) =>
 
 			element.innerText = altText;
 			element.style.fontSize = "16pt";
-			// element.style.backgroundColor = "#FFFFFF";
-			// element.style.color = "#000000";
+
+			if (foreground) element.style.color = foreground;
+			if (background) element.style.backgroundColor = background;
 
 			if (isLink(altText)) {
 				const link = document.createElement("a");
@@ -199,7 +200,14 @@ const enhanceComic = ({ comic, next, prev, alt, noise }) => {
 		autoQueryAll(noise)(element => element.remove()),
 
 		// Add alt text
-		alt ? addAltText(autoQuery(alt.text), autoQuery(alt.after)) : () => {},
+		alt
+			? addAltText(
+					autoQuery(alt.text),
+					autoQuery(alt.after),
+					alt.foreground,
+					alt.background,
+			  )
+			: () => {},
 
 		// Scroll the comic into view after the first img it contains has
 		// loaded
